@@ -254,6 +254,32 @@ extension MeshChatSdk: BitchatDelegate {
     func didDisconnectFromPeer(_ peerID: PeerID) {}
     func isFavorite(fingerprint: String) -> Bool { false }
     func didUpdateMessageDeliveryStatus(_ messageID: String, status: DeliveryStatus) {}
-    func didReceiveNoisePayload(from peerID: PeerID, type: NoisePayloadType, payload: Data, timestamp: Date) {}
+    func didReceiveNoisePayload(from peerID: PeerID, type: NoisePayloadType, payload: Data, timestamp: Date) {
+        // Decrypted Noise payloads arrive here. Without this, incoming private
+        // messages were decrypted but never surfaced to JS (Android→iOS PMs
+        // silently dropped).
+        switch type {
+        case .privateMessage:
+            guard let pm = PrivateMessagePacket.decode(from: payload) else {
+                listener?.onLog("Failed to decode private message from \(peerID.id)")
+                return
+            }
+            let senderNickname = ble.getPeerNicknames()[peerID] ?? peerID.id
+            let msg = MeshChatMessage(
+                id: pm.messageID,
+                senderPeerID: peerID.id,
+                sender: senderNickname,
+                content: pm.content,
+                timestamp: timestamp.timeIntervalSince1970 * 1000,
+                isPrivate: true,
+                isRelay: false
+            )
+            listener?.onMessageReceived(msg)
+            postLocalNotificationIfBackground(sender: senderNickname, content: pm.content)
+        default:
+            // Delivery acks / read receipts / file transfers are not surfaced to JS yet.
+            break
+        }
+    }
     func didUpdateBluetoothState(_ state: CBManagerState) {}
 }

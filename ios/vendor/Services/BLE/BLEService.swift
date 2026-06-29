@@ -950,10 +950,17 @@ final class BLEService: NSObject {
             }
         }
 
-        if !sentEncrypted {
-            // Flood as last resort with recipient set; link aware
-            sendOnAllLinks(packet: packet, data: data, pad: pad, directedOnlyPeer: recipientPeerID)
-        }
+        // Mesh redundancy: flood regardless of whether the direct fast-path
+        // "succeeded". A directPeripheralState marked `isConnected` can be stale
+        // (the write silently goes nowhere), and the recipient may be reachable
+        // only via relays multiple hops away. directedPeerHint (derived from
+        // recipientID) keeps this a full fanout to all neighbors — not a gossip
+        // subset — and relays forward by TTL. The receiver dedups by messageID,
+        // so the extra copy over the direct link is harmless. This restores
+        // bitchat's TTL-based mesh delivery for private messages instead of
+        // depending on a single direct link (which broke multi-device delivery).
+        SecureLogger.debug("📡 Flooding encrypted packet across mesh for \(recipientPeerID.id.prefix(8))… (directFastPath=\(sentEncrypted))", category: .session)
+        sendOnAllLinks(packet: packet, data: data, pad: pad, directedOnlyPeer: recipientPeerID)
     }
 
     private func sendGenericBroadcast(_ packet: BitchatPacket, data: Data, pad: Bool) {

@@ -64,6 +64,17 @@ enum BLEIngressPacketGuard {
             return .success(())
         }
 
+        // Handshake and encrypted payloads carry their own cryptographic replay
+        // protection (Noise handshake transcript + per-message nonce sliding
+        // window), so wall-clock skew between independent devices must not drop
+        // them. Android performs no skew check, so enforcing it here on these
+        // types broke cross-platform sessions (slow/failed iOS handshakes and
+        // silently dropped Android→iOS private messages).
+        if packet.type == MessageType.noiseHandshake.rawValue ||
+           packet.type == MessageType.noiseEncrypted.rawValue {
+            return .success(())
+        }
+
         let packetTime = packet.timestamp
         let skew = packetTime > nowMs ? packetTime - nowMs : nowMs - packetTime
         guard skew <= maxTimestampSkewMs else {
