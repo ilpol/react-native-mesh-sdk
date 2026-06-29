@@ -2,6 +2,7 @@
   "name": "react-native-mesh-sdk",
   "version": "0.1.0",
   "description": "Offline BLE mesh chat for React Native (iOS + Android). Native transport ported from bitchat.",
+  "author": "happy_development",
   "main": "src/index.ts",
   "react-native": "src/index.ts",
   "source": "src/index.ts",

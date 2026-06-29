@@ -8,27 +8,14 @@ protocol-compatible.
 
 ## Installation
 
-> ⚠️ **Not published to the npm registry yet.** So `npm install react-native-mesh-sdk`
-> from the registry won't work — link it locally as a `file:` dependency first.
-> 1. Copy the `react-native-mesh-sdk/` directory next to your project
->    (e.g. one level up — `../react-native-mesh-sdk`).
-> 2. Add it to your project's `package.json` under `dependencies`:
->    ```json
->    "react-native-mesh-sdk": "file:../react-native-mesh-sdk"
->    ```
->    (the path is relative to your `package.json`; adjust to your layout).
-
 ```sh
-npm install            # pulls the package via the file: path
+npm install react-native-mesh-sdk
 # iOS:
 cd ios && pod install
 ```
 
 That's it. The native code (Android library and iOS pod) is wired up automatically via
 **React Native autolinking** — no manual Gradle/CocoaPods/bridge setup needed.
-
-> Once published to the registry, installation simplifies to `npm install react-native-mesh-sdk`
-> (the `file:…` line in `package.json` is no longer needed).
 
 > Requirements: React Native 0.71+, **iOS 16+**, **Android minSdk 26+**.
 

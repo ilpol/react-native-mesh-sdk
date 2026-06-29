@@ -6,11 +6,11 @@ Pod::Spec.new do |s|
   s.name         = "react-native-mesh-sdk"
   s.version      = package["version"]
   s.summary      = package["description"]
-  s.homepage     = "https://example.com/react-native-mesh-sdk"
-  s.license      = "MIT"
-  s.authors      = "MeshChat"
+  s.homepage     = "https://github.com/ilpol/react-native-mesh-sdk"
+  s.license      = "GPL-3.0-or-later"
+  s.authors      = "happy_development"
   s.platforms    = { :ios => "16.0" }
-  s.source       = { :git => "https://example.com/react-native-mesh-sdk.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/ilpol/react-native-mesh-sdk.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm,swift}"
   s.swift_version = "5.9"
