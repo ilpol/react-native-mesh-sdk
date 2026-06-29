@@ -1,18 +1,18 @@
-# Сборочные артефакты Android — НЕ должны попадать в npm-пакет
+# Android build artifacts — must NOT end up in the npm package
 android/build/
 android/.gradle/
 android/.cxx/
 android/local.properties
 **/*.iml
 
-# Сборочные артефакты iOS
+# iOS build artifacts
 ios/build/
 ios/Pods/
 ios/*.xcworkspace
 **/xcuserdata/
 **/DerivedData/
 
-# Прочее
+# Misc
 .DS_Store
 node_modules/
 *.log
