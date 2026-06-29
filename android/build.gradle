@@ -1,0 +1,53 @@
+apply plugin: "com.android.library"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "org.jetbrains.kotlin.plugin.parcelize"
+
+def safeExtGet(prop, fallback) {
+  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
+android {
+  namespace "com.meshchat.rn"
+  compileSdkVersion safeExtGet("compileSdkVersion", 35)
+
+  defaultConfig {
+    minSdkVersion safeExtGet("minSdkVersion", 26)
+    targetSdkVersion safeExtGet("targetSdkVersion", 34)
+  }
+
+  compileOptions {
+    // RN 0.76 собирается на Java 17 — выравниваем, иначе несовпадение JVM-target.
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+// Держим kotlin-stdlib 1.9.x: транзитивный 2.1 ломает чтение метаданных
+// при сборке компилятором Kotlin 1.9 (как в RN-приложении).
+configurations.all {
+  resolutionStrategy {
+    force "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
+    force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24"
+    force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.24"
+  }
+}
+
+dependencies {
+  implementation "com.facebook.react:react-native:+"  // подставляется autolinking'ом
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
+
+  // Зависимости портированного mesh-ядра bitchat (BLE-транспорт на «сырых» API).
+  implementation "androidx.core:core-ktx:1.12.0"
+  implementation "androidx.lifecycle:lifecycle-process:2.7.0"
+  implementation "androidx.lifecycle:lifecycle-common:2.7.0"
+  implementation "androidx.security:security-crypto:1.1.0-alpha06"
+  implementation "com.google.code.gson:gson:2.10.1"
+  implementation "org.bouncycastle:bcprov-jdk15on:1.70"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+  kotlinOptions {
+    jvmTarget = "17"
+    freeCompilerArgs += ["-opt-in=kotlin.ExperimentalStdlibApi"]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "name": "react-native-mesh-sdk",
+  "version": "0.1.0",
+  "description": "Offline BLE mesh chat for React Native (iOS + Android). Native transport ported from bitchat.",
+  "main": "src/index.ts",
+  "react-native": "src/index.ts",
+  "source": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "src",
+    "android/build.gradle",
+    "android/src",
+    "ios/*.swift",
+    "ios/*.m",
+    "ios/*.h",
+    "ios/vendor",
+    "react-native.config.js",
+    "react-native-mesh-sdk.podspec",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "keywords": [
+    "react-native",
+    "ios",
+    "android",
+    "bluetooth",
+    "ble",
+    "mesh",
+    "chat",
+    "offline"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ilpol/react-native-mesh-sdk.git"
+  },
+  "homepage": "https://github.com/ilpol/react-native-mesh-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/ilpol/react-native-mesh-sdk/issues"
+  },
+  "license": "GPL-3.0-or-later",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}

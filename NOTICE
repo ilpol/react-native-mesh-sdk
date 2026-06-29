@@ -1,0 +1,46 @@
+react-native-mesh-sdk
+======================
+
+This package is licensed under the GNU General Public License v3.0
+(or, at your option, any later version). See the LICENSE file.
+
+It is a DERIVATIVE WORK that vendors and modifies source code from the
+bitchat project. The original code was adapted (repackaged, trimmed, and
+wired into a React Native module) by the maintainers of this package.
+
+
+Third-party components and their licenses
+-----------------------------------------
+
+1. bitchat-android  —  GNU General Public License v3.0
+   Copyright (c) permissionlesstech and bitchat contributors.
+   Source: https://github.com/permissionlesstech/bitchat-android
+   Used for: the Android BLE mesh transport, vendored under
+   `android/src/main/java/com/bitchat/android/**` (Kotlin), with local
+   modifications (see this package's git history). Because this component
+   is GPL-3.0, the COMBINED work (this whole package) is distributed under
+   GPL-3.0. This is the reason the package cannot be MIT/permissive.
+
+2. bitchat (iOS)  —  The Unlicense (public domain)
+   Copyright (c) permissionlesstech and bitchat contributors.
+   Source: https://github.com/permissionlesstech/bitchat
+   Used for: the iOS BLE mesh transport, vendored under `ios/vendor/**`
+   (Swift), with local modifications. Public-domain code is compatible with
+   redistribution under GPL-3.0.
+
+3. noise-java (Southern Storm Software)  —  MIT License
+   Copyright (c) 2016 Southern Storm Software, Pty Ltd.
+   Used for: the Noise protocol cryptographic primitives, vendored under
+   `android/src/main/java/com/bitchat/android/noise/southernstorm/**`.
+   The original MIT license headers are preserved in each of those files.
+   MIT is compatible with redistribution under GPL-3.0.
+
+
+Modifications
+-------------
+Changes made to the vendored sources include: repackaging as an autolinked
+React Native library, a thin facade (`com.example.meshchat.sdk` /
+`MeshChatSdk.swift`) and RN bridge, a private BLE service/characteristic UUID,
+background/foreground-service and notification handling, power tuning, and
+exposure of Noise private messaging + peer verification. See the git history
+for details.
