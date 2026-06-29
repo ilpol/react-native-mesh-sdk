@@ -3,14 +3,14 @@ import CoreBluetooth
 import UIKit
 import UserNotifications
 
-/// Сообщение mesh-чата, отдаваемое наверх (в React Native).
-/// Адресация по строковому peerID — как в Android-SDK.
+/// A mesh chat message passed up (to React Native).
+/// Addressing by string peerID — same as in the Android SDK.
 public struct MeshChatMessage {
     public let id: String
     public let senderPeerID: String?
     public let sender: String
     public let content: String
-    public let timestamp: TimeInterval   // мс с эпохи
+    public let timestamp: TimeInterval   // ms since epoch
     public let isPrivate: Bool
     public let isRelay: Bool
 }
@@ -18,7 +18,7 @@ public struct MeshChatMessage {
 public protocol MeshChatListener: AnyObject {
     func onMessageReceived(_ message: MeshChatMessage)
     func onPeerListUpdated(_ peers: [String])
-    /// Установлена сквозная Noise-сессия с пиром (для индикации шифрования).
+    /// An end-to-end Noise session has been established with a peer (for the encryption indicator).
     func onNoiseSession(_ peerID: String, established: Bool)
     func onError(_ error: Error)
     func onLog(_ message: String)
@@ -30,23 +30,23 @@ public extension MeshChatListener {
     func onLog(_ message: String) {}
 }
 
-/// Реальный mesh-чат поверх портированного из bitchat-iOS BLE-стека (`BLEService`).
-/// GATT-соединения, фрагментация, store-and-forward, релей с TTL, дедупликация —
-/// то же ядро, что и на Android, протокол-совместимое.
+/// A real mesh chat on top of the BLE stack ported from bitchat-iOS (`BLEService`).
+/// GATT connections, fragmentation, store-and-forward, TTL relay, deduplication —
+/// the same core as on Android, protocol-compatible.
 public final class MeshChatSdk: NSObject {
 
     public weak var listener: MeshChatListener?
 
     private let ble: BLEService
-    /// Тот же менеджер идентичности, что использует BLEService — для verified-отпечатков.
+    /// The same identity manager that BLEService uses — for verified fingerprints.
     private let identityManager: SecureIdentityStateManager
     private var started = false
     private var nickname: String
-    /// Показывать локальное уведомление о входящем, когда приложение в фоне.
-    /// Меняется в рантайме через setNotificationsEnabled.
+    /// Whether to show a local notification for an incoming message when the app is backgrounded.
+    /// Changed at runtime via setNotificationsEnabled.
     private var notifyInBackground: Bool
 
-    /// Включить/выключить локальные уведомления о входящих сообщениях.
+    /// Enable/disable local notifications for incoming messages.
     public func setNotificationsEnabled(_ enabled: Bool) {
         notifyInBackground = enabled
         if enabled {
@@ -67,7 +67,7 @@ public final class MeshChatSdk: NSObject {
         self.ble = BLEService(keychain: keychain, idBridge: idBridge, identityManager: identityManager)
         super.init()
         self.ble.delegate = self
-        // Сообщаем наверх об установлении Noise-сессии (для иконки 🔒).
+        // Notify upward about Noise session establishment (for the 🔒 icon).
         self.ble.addPeerAuthenticatedHandler { [weak self] peerID, _ in
             self?.listener?.onNoiseSession(peerID.id, established: true)
         }
@@ -76,13 +76,13 @@ public final class MeshChatSdk: NSObject {
         }
     }
 
-    /// Локальное уведомление о входящем — только когда приложение не на переднем плане.
+    /// Local notification for an incoming message — only when the app is not in the foreground.
     private func postLocalNotificationIfBackground(sender: String, content: String) {
         guard notifyInBackground else { return }
         DispatchQueue.main.async {
             guard UIApplication.shared.applicationState != .active else { return }
             let c = UNMutableNotificationContent()
-            c.title = sender.isEmpty ? "Новое сообщение" : sender
+            c.title = sender.isEmpty ? "New message" : sender
             c.body = content
             c.sound = .default
             let req = UNNotificationRequest(identifier: UUID().uuidString, content: c, trigger: nil)
@@ -95,9 +95,9 @@ public final class MeshChatSdk: NSObject {
         ble.setNickname(nickname)
     }
 
-    /// Режим экономии батареи. На iOS фоновый BLE троттлится самой системой,
-    /// поэтому метод сохраняет предпочтение для единообразия API (поведение
-    /// в основном управляется iOS). Реальный эффект — на Android.
+    /// Battery saver mode. On iOS background BLE is throttled by the system itself,
+    /// so this method just stores the preference for API uniformity (behavior is
+    /// mostly governed by iOS). The real effect is on Android.
     public private(set) var batterySaverEnabled = false
     public func setBatterySaver(_ enabled: Bool) {
         batterySaverEnabled = enabled
@@ -119,14 +119,14 @@ public final class MeshChatSdk: NSObject {
         listener?.onLog("MeshChatSdk stopped")
     }
 
-    /// Широковещательное сообщение всем узлам сети.
+    /// Broadcast message to all nodes on the network.
     public func sendBroadcastMessage(_ text: String) {
         guard ensureStarted() else { return }
         ble.sendMessage(text, mentions: [])
         echoOwnMessage(text, isPrivate: false)
     }
 
-    /// Приватное сообщение конкретному узлу по его peerID.
+    /// Private message to a specific node by its peerID.
     public func sendPrivateMessage(_ text: String, to recipientPeerID: String, recipientNickname: String) {
         guard ensureStarted() else { return }
         let messageID = UUID().uuidString
@@ -140,16 +140,16 @@ public final class MeshChatSdk: NSObject {
         return result
     }
 
-    // MARK: - Сквозное шифрование (Noise) и верификация пиров
+    // MARK: - End-to-end encryption (Noise) and peer verification
 
-    /// Инициировать Noise-handshake с пиром (нужно перед первым приватным сообщением:
-    /// sendPrivateMessage работает fire-and-forget и без сессии сообщение не уйдёт).
+    /// Initiate a Noise handshake with a peer (needed before the first private message:
+    /// sendPrivateMessage is fire-and-forget and without a session the message won't go out).
     public func startHandshake(_ peerID: String) {
         guard ensureStarted() else { return }
         ble.triggerHandshake(with: PeerID(str: peerID))
     }
 
-    /// Есть ли установленная (зашифрованная) Noise-сессия с пиром.
+    /// Whether an established (encrypted) Noise session exists with the peer.
     public func hasSession(_ peerID: String) -> Bool {
         if case .established = ble.getNoiseSessionState(for: PeerID(str: peerID)) {
             return true
@@ -157,29 +157,29 @@ public final class MeshChatSdk: NSObject {
         return false
     }
 
-    /// Отпечаток ключа пира (для сверки вне сети); nil, пока нет сессии.
+    /// Peer's key fingerprint (for out-of-band comparison); nil until there's a session.
     public func getPeerFingerprint(_ peerID: String) -> String? {
         return ble.getFingerprint(for: PeerID(str: peerID))
     }
 
-    /// Наш собственный отпечаток ключа.
+    /// Our own key fingerprint.
     public func getMyFingerprint() -> String? {
         return ble.noiseIdentityFingerprint()
     }
 
-    /// Помечен ли пир доверенным (verified) — по отпечатку, хранится локально.
+    /// Whether the peer is marked verified — by fingerprint, stored locally.
     public func isPeerVerified(_ peerID: String) -> Bool {
         guard let fp = ble.getFingerprint(for: PeerID(str: peerID)) else { return false }
         return identityManager.isVerified(fingerprint: fp)
     }
 
-    /// Пометить/снять пир доверенным (после сверки отпечатков вне сети).
+    /// Mark/unmark a peer as verified (after comparing fingerprints out of band).
     public func setPeerVerified(_ peerID: String, _ verified: Bool) {
         guard let fp = ble.getFingerprint(for: PeerID(str: peerID)) else { return }
         identityManager.setVerified(fingerprint: fp, verified: verified)
     }
 
-    /// Никнейм пира по peerID (или nil).
+    /// Peer's nickname by peerID (or nil).
     public func getPeerNickname(_ peerID: String) -> String? {
         return getPeerNicknames()[peerID]
     }
@@ -199,8 +199,8 @@ public final class MeshChatSdk: NSObject {
         return true
     }
 
-    /// Локальное эхо: транспорт не возвращает собственное сообщение через делегат,
-    /// поэтому показываем его отправителю сами.
+    /// Local echo: the transport doesn't return our own message via the delegate,
+    /// so we show it to the sender ourselves.
     private func echoOwnMessage(_ text: String, isPrivate: Bool) {
         let msg = MeshChatMessage(
             id: UUID().uuidString,

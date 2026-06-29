@@ -1,5 +1,5 @@
-// Явно указываем autolinking'у, где лежит ReactPackage (класс в com.meshchat.rn,
-// а не в namespace по умолчанию).
+// Explicitly tell autolinking where the ReactPackage lives (the class is in
+// com.meshchat.rn, not in the default namespace).
 module.exports = {
   dependency: {
     platforms: {

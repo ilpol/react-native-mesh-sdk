@@ -33,7 +33,7 @@ final class MeshChatModule: RCTEventEmitter, MeshChatListener {
   func stop(_ resolve: RCTPromiseResolveBlock,
             rejecter reject: RCTPromiseRejectBlock) {
     sdk?.stop()
-    // Создаём свежий SDK при следующем start() (после закрытия/свайпа).
+    // Create a fresh SDK on the next start() (after the app is closed/swiped away).
     sdk = nil
     resolve(nil)
   }
@@ -104,7 +104,7 @@ final class MeshChatModule: RCTEventEmitter, MeshChatListener {
     resolve(nil)
   }
 
-  // MARK: - Шифрование (Noise) и верификация
+  // MARK: - Encryption (Noise) and verification
 
   @objc
   func startHandshake(_ peerID: NSString,

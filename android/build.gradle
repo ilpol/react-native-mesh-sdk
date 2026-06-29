@@ -16,14 +16,14 @@ android {
   }
 
   compileOptions {
-    // RN 0.76 собирается на Java 17 — выравниваем, иначе несовпадение JVM-target.
+    // RN 0.76 builds on Java 17 — match it, otherwise the JVM target mismatches.
     sourceCompatibility JavaVersion.VERSION_17
     targetCompatibility JavaVersion.VERSION_17
   }
 }
 
-// Держим kotlin-stdlib 1.9.x: транзитивный 2.1 ломает чтение метаданных
-// при сборке компилятором Kotlin 1.9 (как в RN-приложении).
+// Pin kotlin-stdlib to 1.9.x: a transitive 2.1 breaks metadata reading
+// when building with the Kotlin 1.9 compiler (as in the RN app).
 configurations.all {
   resolutionStrategy {
     force "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
@@ -33,10 +33,10 @@ configurations.all {
 }
 
 dependencies {
-  implementation "com.facebook.react:react-native:+"  // подставляется autolinking'ом
+  implementation "com.facebook.react:react-native:+"  // substituted by autolinking
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
 
-  // Зависимости портированного mesh-ядра bitchat (BLE-транспорт на «сырых» API).
+  // Dependencies of the ported bitchat mesh core (BLE transport on raw APIs).
   implementation "androidx.core:core-ktx:1.12.0"
   implementation "androidx.lifecycle:lifecycle-process:2.7.0"
   implementation "androidx.lifecycle:lifecycle-common:2.7.0"

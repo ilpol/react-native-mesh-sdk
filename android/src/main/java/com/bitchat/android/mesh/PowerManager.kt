@@ -26,18 +26,18 @@ class PowerManager(private val context: Context) : LifecycleEventObserver {
     companion object {
         private const val TAG = "PowerManager"
 
-        // MeshChat: пользовательский профиль энергопотребления.
-        // false (по умолчанию) — держим mesh активным в фоне (BALANCED).
-        // true — «экономия батареи»: в фоне опускаемся до POWER_SAVER.
+        // MeshChat: user-selected power profile.
+        // false (default) — keep mesh active in the background (BALANCED).
+        // true — "battery saver": drop down to POWER_SAVER in the background.
         @Volatile
         var batterySaverEnabled: Boolean = false
             private set
 
-        // Активные инстансы, чтобы применить смену профиля сразу.
+        // Active instances, so a profile change can be applied immediately.
         private val instances =
             java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<PowerManager, Boolean>())
 
-        /** Включить/выключить режим экономии батареи (вызывается из SDK). */
+        /** Enable/disable battery saver mode (called from the SDK). */
         fun setBatterySaver(enabled: Boolean) {
             if (batterySaverEnabled == enabled) return
             batterySaverEnabled = enabled
@@ -130,7 +130,7 @@ class PowerManager(private val context: Context) : LifecycleEventObserver {
         startDutyCycle()
     }
 
-    /** Пересчитать режим (например, после смены профиля экономии батареи). */
+    /** Recompute the mode (e.g. after the battery saver profile changes). */
     fun reevaluate() {
         updatePowerMode()
     }
@@ -297,16 +297,16 @@ class PowerManager(private val context: Context) : LifecycleEventObserver {
             else -> PowerMode.BALANCED
         }
 
-        // MeshChat: у нас есть foreground-сервис, цель которого — держать mesh
-        // живым в фоне. По умолчанию в фоне держим BALANCED (надёжная доставка).
-        // В режиме «экономия батареи» — опускаемся до POWER_SAVER.
-        // Низкий/критический заряд всегда понижает режим независимо от профиля.
+        // MeshChat: we have a foreground service whose purpose is to keep mesh
+        // alive in the background. By default we hold BALANCED in the background (reliable delivery).
+        // In "battery saver" mode we drop down to POWER_SAVER.
+        // Low/critical battery always lowers the mode regardless of the profile.
         val newMode = if (isAppInBackground) {
             when {
-                baseMode == PowerMode.ULTRA_LOW_POWER -> PowerMode.ULTRA_LOW_POWER  // критический заряд
-                baseMode == PowerMode.POWER_SAVER -> PowerMode.POWER_SAVER          // низкий заряд
-                batterySaverEnabled -> PowerMode.POWER_SAVER                        // экономия батареи
-                else -> PowerMode.BALANCED                                          // держим mesh активным
+                baseMode == PowerMode.ULTRA_LOW_POWER -> PowerMode.ULTRA_LOW_POWER  // critical battery
+                baseMode == PowerMode.POWER_SAVER -> PowerMode.POWER_SAVER          // low battery
+                batterySaverEnabled -> PowerMode.POWER_SAVER                        // battery saver
+                else -> PowerMode.BALANCED                                          // keep mesh active
             }
         } else {
             baseMode

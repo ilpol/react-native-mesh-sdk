@@ -10,18 +10,18 @@ import android.provider.Settings
 import android.util.Log
 
 /**
- * Помощник для исключения приложения из оптимизации батареи (Doze/App Standby).
+ * Helper for exempting the app from battery optimization (Doze/App Standby).
  *
- * На агрессивных прошивках (Vivo, Xiaomi, Huawei и т.п.) система убивает фоновые
- * процессы — даже с foreground-сервисом — пока приложение не добавлено в «белый
- * список» энергосбережения. Это главный практический способ пережить смахивание
- * приложения и долгий фон.
+ * On aggressive firmware (Vivo, Xiaomi, Huawei, etc.) the system kills background
+ * processes — even with a foreground service — until the app is added to the power-saving
+ * "whitelist". This is the main practical way to survive the app being swiped away
+ * and long background runs.
  */
 object MeshBattery {
 
     private const val TAG = "MeshBattery"
 
-    /** Уже исключено из оптимизации батареи? */
+    /** Already exempt from battery optimization? */
     fun isIgnoringBatteryOptimizations(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
         val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return false
@@ -29,8 +29,8 @@ object MeshBattery {
     }
 
     /**
-     * Показать системный диалог «разрешить работу без ограничений батареи».
-     * Если он недоступен — открыть общий экран настроек оптимизации батареи.
+     * Show the system dialog "allow running without battery restrictions".
+     * If it's unavailable, open the general battery-optimization settings screen.
      */
     @SuppressLint("BatteryLife")
     fun requestIgnoreBatteryOptimizations(context: Context) {
@@ -43,14 +43,14 @@ object MeshBattery {
             }
             context.startActivity(intent)
         } catch (t: Throwable) {
-            Log.w(TAG, "Direct request failed (${t.message}); открываю общий экран настроек")
+            Log.w(TAG, "Direct request failed (${t.message}); opening the general settings screen")
             try {
                 val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 context.startActivity(fallback)
             } catch (t2: Throwable) {
-                Log.e(TAG, "Не удалось открыть настройки оптимизации батареи: ${t2.message}")
+                Log.e(TAG, "Failed to open battery optimization settings: ${t2.message}")
             }
         }
     }

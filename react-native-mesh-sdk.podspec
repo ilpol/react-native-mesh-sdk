@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
 
   s.frameworks = "CoreBluetooth", "Combine", "UIKit", "UserNotifications"
 
-  # Подключение React Native (заголовки RCTEventEmitter и т.д.).
+  # Hook up React Native (RCTEventEmitter headers, etc.).
   if respond_to?(:install_modules_dependencies, true)
     install_modules_dependencies(s)
   else

@@ -1313,8 +1313,8 @@ class BluetoothMeshService(private val context: Context) : TransportBridgeServic
     }
 
     /**
-     * Подписка на установление Noise-сессии с пиром (для индикации шифрования в UI).
-     * Колбэк вызывается с peerID, когда handshake завершён и сессия готова.
+     * Subscribe to Noise session establishment with a peer (for showing the encryption indicator in the UI).
+     * The callback is invoked with the peerID once the handshake completes and the session is ready.
      */
     fun setOnNoiseSessionEstablished(callback: ((String) -> Unit)?) {
         encryptionService.onSessionEstablished = callback

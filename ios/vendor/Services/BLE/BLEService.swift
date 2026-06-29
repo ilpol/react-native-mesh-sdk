@@ -13,8 +13,8 @@ final class BLEService: NSObject {
     
     // MARK: - Constants
     
-    // MeshChat: собственный UUID (совпадает с Android-SDK), изолирует сеть от bitchat.
-    // Один и тот же UUID в debug и release, чтобы сборки видели друг друга.
+    // MeshChat: our own UUID (matches the Android SDK), isolates the network from bitchat.
+    // The same UUID in debug and release so the builds can see each other.
     static let serviceUUID = CBUUID(string: "7D3F1A60-2C8B-4E55-9A14-6F2D9B3C71E0")
     static let characteristicUUID = CBUUID(string: "7D3F1A61-2C8B-4E55-9A14-6F2D9B3C71E0")
     private static let centralRestorationID = "chat.bitchat.ble.central"
@@ -655,9 +655,9 @@ final class BLEService: NSObject {
         noiseService.onHandshakeRequired = onHandshakeRequired
     }
 
-    /// Добавляет обработчик установления Noise-сессии (peer authenticated).
-    /// Аддитивно — НЕ затирает внутренний обработчик BLEService и не трогает
-    /// onHandshakeRequired. Используется фасадом для события onNoiseSession.
+    /// Adds a handler for Noise session establishment (peer authenticated).
+    /// Additive — it does NOT overwrite BLEService's internal handler and does not touch
+    /// onHandshakeRequired. Used by the facade for the onNoiseSession event.
     func addPeerAuthenticatedHandler(_ handler: @escaping (PeerID, String) -> Void) {
         noiseService.onPeerAuthenticated = handler
     }

@@ -17,15 +17,15 @@ class BluetoothPermissionManager(private val context: Context) {
         val permissions = mutableListOf<String>()
         
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            // На Android 12+ BLUETOOTH_SCAN объявлен с neverForLocation, поэтому
-            // для mesh-чата геолокация не требуется — только BT-разрешения.
+            // On Android 12+ BLUETOOTH_SCAN is declared with neverForLocation, so
+            // mesh chat doesn't need location — only the BT permissions.
             permissions.addAll(listOf(
                 Manifest.permission.BLUETOOTH_ADVERTISE,
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.BLUETOOTH_SCAN
             ))
         } else {
-            // До Android 12 BLE-сканирование невозможно без location.
+            // Before Android 12 BLE scanning is impossible without location.
             permissions.addAll(listOf(
                 Manifest.permission.BLUETOOTH,
                 Manifest.permission.BLUETOOTH_ADMIN,

@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Legacy BLE permissions (Android 11 и ниже) -->
+    <!-- Legacy BLE permissions (Android 11 and below) -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <!-- location нужен для BLE-скана только до Android 12 -->
+    <!-- location is needed for BLE scanning only before Android 12 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
 
-    <!-- Android 12+ BLE permissions. neverForLocation: mesh-чату геолокация не нужна. -->
+    <!-- Android 12+ BLE permissions. neverForLocation: mesh chat doesn't need location. -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 
-    <!-- Фоновая работа mesh через foreground-сервис -->
+    <!-- Background mesh operation via a foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <!-- Постоянное уведомление сервиса (Android 13+) -->
+    <!-- Persistent service notification (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Исключение из оптимизации батареи (живучесть фона на агрессивных OEM) -->
+    <!-- Exemption from battery optimization (background survivability on aggressive OEMs) -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application>

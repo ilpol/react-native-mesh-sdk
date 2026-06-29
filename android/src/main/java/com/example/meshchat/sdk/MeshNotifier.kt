@@ -13,9 +13,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 
 /**
- * Локальные уведомления о входящих сообщениях, когда приложение в фоне.
- * Работает нативно (JS в фоне спит), поэтому пользователь видит сообщение,
- * не открывая приложение.
+ * Local notifications for incoming messages while the app is backgrounded.
+ * Works natively (JS sleeps in the background), so the user sees the message
+ * without opening the app.
  */
 object MeshNotifier {
 
@@ -37,7 +37,7 @@ object MeshNotifier {
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle(sender.ifBlank { "Новое сообщение" })
+            .setContentTitle(sender.ifBlank { "New message" })
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(content))
             .setSmallIcon(android.R.drawable.stat_notify_chat)
@@ -48,12 +48,12 @@ object MeshNotifier {
             .apply { contentPI?.let { setContentIntent(it) } }
             .build()
 
-        // Одно уведомление на отправителя (новые перетирают старое от того же узла).
+        // One notification per sender (new ones overwrite the old one from the same node).
         val id = threadKey.hashCode()
         try {
             NotificationManagerCompat.from(context).notify(id, notification)
         } catch (_: SecurityException) {
-            // POST_NOTIFICATIONS не выдан — молча игнорируем.
+            // POST_NOTIFICATIONS not granted — silently ignore.
         }
     }
 
@@ -70,9 +70,9 @@ object MeshNotifier {
             if (nm.getNotificationChannel(CHANNEL_ID) == null) {
                 val channel = NotificationChannel(
                     CHANNEL_ID,
-                    "Сообщения",
+                    "Messages",
                     NotificationManager.IMPORTANCE_HIGH
-                ).apply { description = "Входящие сообщения mesh-чата" }
+                ).apply { description = "Incoming mesh chat messages" }
                 nm.createNotificationChannel(channel)
             }
         }

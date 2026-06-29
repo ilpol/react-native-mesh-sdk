@@ -86,7 +86,7 @@ class BluetoothGattClientManager(
     @Volatile private var isCurrentlyScanning = false
     private val scanRateLimit = 5000L // Minimum 5 seconds between scan start attempts
 
-    // Троттл лога дедупликации уже-подключённых пиров (peerID -> ts последнего лога).
+    // Log throttle for deduplicating already-connected peers (peerID -> ts of last log).
     private val dedupLogThrottle = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     // Self-healing scan state.
@@ -460,8 +460,8 @@ class BluetoothGattClientManager(
         if (peerID != null) {
             // Log.v(TAG, "Found peerID $peerID in scan record for $deviceAddress")
             if (connectionTracker.isPeerConnected(peerID)) {
-                 // Троттлим лог: уже-подключённые пиры репортятся сканером десятки
-                 // раз/сек (ротация MAC) — логируем не чаще раза в 10с на пира.
+                 // Throttle the log: already-connected peers are reported by the scanner dozens
+                 // of times/sec (MAC rotation) — log at most once per 10s per peer.
                  val now = android.os.SystemClock.elapsedRealtime()
                  val last = dedupLogThrottle[peerID]
                  if (last == null || now - last > 10_000L) {

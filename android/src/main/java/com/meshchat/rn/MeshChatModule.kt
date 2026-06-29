@@ -35,9 +35,9 @@ class MeshChatModule(
     @ReactMethod
     fun stop(promise: Promise) {
         sdk?.stop()
-        // ВАЖНО: после stop() инстанс mesh терминируется и не переиспользуется.
-        // Обнуляем, чтобы следующий start() создал свежий SDK (иначе после
-        // закрытия/свайпа и повторного открытия mesh не запустится).
+        // IMPORTANT: after stop() the mesh instance is terminated and not reused.
+        // Null it out so the next start() creates a fresh SDK (otherwise mesh won't
+        // start after the app is closed/swiped away and reopened).
         sdk = null
         promise.resolve(null)
     }
@@ -104,7 +104,7 @@ class MeshChatModule(
         promise.resolve(null)
     }
 
-    // region Шифрование (Noise) и верификация
+    // region Encryption (Noise) and verification
 
     @ReactMethod
     fun startHandshake(peerID: String, promise: Promise) {
@@ -145,9 +145,9 @@ class MeshChatModule(
 
     // endregion
 
-    // Обязательны для NativeEventEmitter в New Architecture (bridgeless): без них
-    // JS-подписки не получают события из натива. Сама доставка идёт через
-    // RCTDeviceEventEmitter (см. sendEvent), поэтому здесь — no-op.
+    // Required for NativeEventEmitter in the New Architecture (bridgeless): without them
+    // JS subscriptions don't receive events from native. The actual delivery goes through
+    // RCTDeviceEventEmitter (see sendEvent), so this is a no-op.
     @ReactMethod
     fun addListener(eventName: String) {
         // no-op

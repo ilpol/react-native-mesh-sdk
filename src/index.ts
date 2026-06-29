@@ -27,7 +27,7 @@ export type MeshChatError = {
   error: string;
 };
 
-/** Событие установления/сброса сквозной Noise-сессии с пиром. */
+/** Event for establishing/tearing down an end-to-end Noise session with a peer. */
 export type MeshChatNoiseSession = {
   peerID: string;
   established: boolean;
@@ -36,7 +36,7 @@ export type MeshChatNoiseSession = {
 const emitter = new NativeEventEmitter(MeshChat);
 
 /**
- * Запускает mesh-транспорт. Возвращает peerID этого узла.
+ * Starts the mesh transport. Returns this node's peerID.
  */
 export function startMesh(nickname?: string): Promise<string> {
   return MeshChat.start(nickname ?? null);
@@ -55,9 +55,9 @@ export function getMyPeerID(): Promise<string | null> {
 }
 
 /**
- * Включить/выключить локальные уведомления о входящих сообщениях, когда
- * приложение в фоне. По умолчанию включены. Не влияет на постоянное уведомление
- * foreground-сервиса на Android (оно обязательно для фоновой работы).
+ * Enable/disable local notifications for incoming messages while the app is
+ * backgrounded. Enabled by default. Does not affect the persistent foreground-service
+ * notification on Android (which is mandatory for background operation).
  */
 export function setNotificationsEnabled(enabled: boolean): Promise<void> {
   if (typeof MeshChat?.setNotificationsEnabled !== 'function') {
@@ -67,15 +67,15 @@ export function setNotificationsEnabled(enabled: boolean): Promise<void> {
 }
 
 /**
- * Режим экономии батареи. При включении mesh в фоне работает реже
- * (меньше расход, но фоновая доставка менее оперативна). По умолчанию выкл.
- * Реальный эффект — на Android; на iOS фоновый BLE троттлит сама система.
+ * Battery saver mode. When enabled, mesh runs less often in the background
+ * (lower drain, but background delivery is less prompt). Off by default.
+ * The real effect is on Android; on iOS background BLE is throttled by the system itself.
  */
 export function setBatterySaver(enabled: boolean): Promise<void> {
-  // Защита от устаревшего нативного бинарника (нужен ребилд после добавления метода).
+  // Guard against a stale native binary (a rebuild is needed after adding the method).
   if (typeof MeshChat?.setBatterySaver !== 'function') {
     console.warn(
-      'MeshChat.setBatterySaver недоступен — пересоберите нативное приложение (не просто reload JS).',
+      'MeshChat.setBatterySaver is unavailable — rebuild the native app (not just a JS reload).',
     );
     return Promise.resolve();
   }
@@ -83,8 +83,8 @@ export function setBatterySaver(enabled: boolean): Promise<void> {
 }
 
 /**
- * Исключено ли приложение из оптимизации батареи (Android).
- * На iOS всегда true (нет такого механизма).
+ * Whether the app is exempt from battery optimization (Android).
+ * On iOS always true (there's no such mechanism).
  */
 export function isIgnoringBatteryOptimizations(): Promise<boolean> {
   if (Platform.OS !== 'android' || typeof MeshChat?.isIgnoringBatteryOptimizations !== 'function') {
@@ -94,8 +94,8 @@ export function isIgnoringBatteryOptimizations(): Promise<boolean> {
 }
 
 /**
- * Показать системный диалог «работать без ограничений батареи» (Android).
- * Резко повышает живучесть фона/после свайпа на агрессивных прошивках.
+ * Show the system "run without battery restrictions" dialog (Android).
+ * Dramatically improves background/after-swipe survivability on aggressive firmware.
  */
 export function requestIgnoreBatteryOptimizations(): Promise<void> {
   if (Platform.OS !== 'android' || typeof MeshChat?.requestIgnoreBatteryOptimizations !== 'function') {
@@ -104,12 +104,12 @@ export function requestIgnoreBatteryOptimizations(): Promise<void> {
   return MeshChat.requestIgnoreBatteryOptimizations();
 }
 
-/** Широковещательное сообщение всем узлам сети. */
+/** Broadcast message to all nodes on the network. */
 export function sendBroadcast(text: string): Promise<void> {
   return MeshChat.sendBroadcast(text);
 }
 
-/** Приватное сообщение конкретному узлу по его peerID. */
+/** Private message to a specific node by its peerID. */
 export function sendPrivate(
   text: string,
   recipientPeerID: string,
@@ -118,26 +118,26 @@ export function sendPrivate(
   return MeshChat.sendPrivate(text, recipientPeerID, recipientNickname);
 }
 
-// --- Сквозное шифрование (Noise) и верификация пиров ---
+// --- End-to-end encryption (Noise) and peer verification ---
 //
-// Приватные сообщения шифруются end-to-end по протоколу Noise XX (как в bitchat):
-// перед первой отправкой нужно установить сессию (`startHandshake`), затем дождаться
-// события `subscribeNoiseSessions` (established=true) и только потом слать `sendPrivate`
-// — иначе сообщение не уйдёт (транспорт fire-and-forget). Broadcast не шифруется.
+// Private messages are encrypted end-to-end with the Noise XX protocol (as in bitchat):
+// before the first send you must establish a session (`startHandshake`), then wait for
+// the `subscribeNoiseSessions` event (established=true), and only then send `sendPrivate`
+// — otherwise the message won't go out (the transport is fire-and-forget). Broadcast is not encrypted.
 
 /**
- * Инициировать Noise-handshake с пиром (нужно перед первым приватным сообщением).
- * Об установлении сессии придёт событие через `subscribeNoiseSessions`.
+ * Initiate a Noise handshake with a peer (needed before the first private message).
+ * Session establishment is reported via the `subscribeNoiseSessions` event.
  */
 export function startHandshake(peerID: string): Promise<void> {
   if (typeof MeshChat?.startHandshake !== 'function') {
-    console.warn('MeshChat.startHandshake недоступен — пересоберите нативное приложение.');
+    console.warn('MeshChat.startHandshake is unavailable — rebuild the native app.');
     return Promise.resolve();
   }
   return MeshChat.startHandshake(peerID);
 }
 
-/** Установлена ли зашифрованная Noise-сессия с пиром. */
+/** Whether an encrypted Noise session is established with the peer. */
 export function hasSession(peerID: string): Promise<boolean> {
   if (typeof MeshChat?.hasSession !== 'function') {
     return Promise.resolve(false);
@@ -145,7 +145,7 @@ export function hasSession(peerID: string): Promise<boolean> {
   return MeshChat.hasSession(peerID);
 }
 
-/** Отпечаток ключа пира (SHA-256) — для сверки «вживую»; null, пока нет сессии. */
+/** Peer's key fingerprint (SHA-256) — for in-person comparison; null until there's a session. */
 export function getPeerFingerprint(peerID: string): Promise<string | null> {
   if (typeof MeshChat?.getPeerFingerprint !== 'function') {
     return Promise.resolve(null);
@@ -153,7 +153,7 @@ export function getPeerFingerprint(peerID: string): Promise<string | null> {
   return MeshChat.getPeerFingerprint(peerID);
 }
 
-/** Наш собственный отпечаток ключа (его сверяет собеседник). */
+/** Our own key fingerprint (the other party compares it). */
 export function getMyFingerprint(): Promise<string | null> {
   if (typeof MeshChat?.getMyFingerprint !== 'function') {
     return Promise.resolve(null);
@@ -161,7 +161,7 @@ export function getMyFingerprint(): Promise<string | null> {
   return MeshChat.getMyFingerprint();
 }
 
-/** Помечен ли пир как доверенный (verified). */
+/** Whether the peer is marked verified. */
 export function isPeerVerified(peerID: string): Promise<boolean> {
   if (typeof MeshChat?.isPeerVerified !== 'function') {
     return Promise.resolve(false);
@@ -169,7 +169,7 @@ export function isPeerVerified(peerID: string): Promise<boolean> {
   return MeshChat.isPeerVerified(peerID);
 }
 
-/** Пометить/снять пир доверенным (после сверки отпечатков вне сети). */
+/** Mark/unmark a peer as verified (after comparing fingerprints out of band). */
 export function setPeerVerified(peerID: string, verified: boolean): Promise<void> {
   if (typeof MeshChat?.setPeerVerified !== 'function') {
     return Promise.resolve();
@@ -177,7 +177,7 @@ export function setPeerVerified(peerID: string, verified: boolean): Promise<void
   return MeshChat.setPeerVerified(peerID, verified);
 }
 
-/** Никнейм пира по peerID (или null). */
+/** Peer's nickname by peerID (or null). */
 export function getPeerNickname(peerID: string): Promise<string | null> {
   if (typeof MeshChat?.getPeerNickname !== 'function') {
     return Promise.resolve(null);
@@ -193,7 +193,7 @@ export async function ensureBlePermissions(): Promise<boolean> {
   const sdkInt = Number(Platform.constants?.Release ?? 0);
 
   try {
-    // Обязательные BLE-разрешения.
+    // Mandatory BLE permissions.
     const required: string[] =
       sdkInt >= 12
         ? [
@@ -203,8 +203,8 @@ export async function ensureBlePermissions(): Promise<boolean> {
           ]
         : ['android.permission.ACCESS_FINE_LOCATION'];
 
-    // POST_NOTIFICATIONS (Android 13+) — для уведомления foreground-сервиса.
-    // Не обязателен: без него mesh работает, просто не видно уведомления.
+    // POST_NOTIFICATIONS (Android 13+) — for the foreground-service notification.
+    // Not mandatory: without it mesh still works, the notification just isn't visible.
     const optional: string[] =
       sdkInt >= 13 ? ['android.permission.POST_NOTIFICATIONS'] : [];
 
@@ -213,7 +213,7 @@ export async function ensureBlePermissions(): Promise<boolean> {
       ...optional,
     ] as any);
 
-    // Успех определяем только по обязательным разрешениям.
+    // Determine success only by the mandatory permissions.
     return required.every(
       p => (results as any)[p] === PermissionsAndroid.RESULTS.GRANTED,
     );
@@ -255,7 +255,7 @@ export function subscribeErrors(cb: (err: MeshChatError) => void): () => void {
   return () => sub.remove();
 }
 
-/** Подписка на установление сквозной Noise-сессии с пирами (иконка 🔒). */
+/** Subscribe to end-to-end Noise session establishment with peers (the 🔒 icon). */
 export function subscribeNoiseSessions(
   cb: (session: MeshChatNoiseSession) => void,
 ): () => void {

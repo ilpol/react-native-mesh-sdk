@@ -26,9 +26,9 @@ object AppConstants {
         const val RSSI_UPDATE_INTERVAL_MS: Long = 5_000L
 
         object Gatt {
-            // Собственные UUID'ы MeshChat — изолируют нашу сеть от bitchat и чужих
-            // устройств (иначе все на одном UUID забивают слоты соединений → потери).
-            // DESCRIPTOR_UUID не трогаем: это стандартный CCCD (0x2902).
+            // MeshChat's own UUIDs — they isolate our network from bitchat and other
+            // devices (otherwise everyone on a single UUID floods the connection slots → losses).
+            // We leave DESCRIPTOR_UUID alone: it's the standard CCCD (0x2902).
             val SERVICE_UUID: UUID = UUID.fromString("7D3F1A60-2C8B-4E55-9A14-6F2D9B3C71E0")
             val CHARACTERISTIC_UUID: UUID = UUID.fromString("7D3F1A61-2C8B-4E55-9A14-6F2D9B3C71E0")
             val DESCRIPTOR_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")

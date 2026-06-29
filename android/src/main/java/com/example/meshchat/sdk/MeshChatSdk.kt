@@ -18,10 +18,10 @@ import com.bitchat.android.ui.debug.DebugPreferenceManager
 import java.util.Date
 
 /**
- * Сообщение mesh-чата, отдаваемое наверх (в React Native).
+ * A mesh chat message passed up (to React Native).
  *
- * Адресация идёт по строковому peerID, что позволяет поддержать приватные
- * сообщения, подтверждения доставки и прочтения.
+ * Addressing is by string peerID, which makes it possible to support private
+ * messages plus delivery and read receipts.
  */
 data class MeshChatMessage(
     val id: String,
@@ -39,33 +39,33 @@ interface MeshChatListener {
     fun onPeerListUpdated(peers: List<String>) {}
     fun onDeliveryAck(messageID: String, peerID: String) {}
     fun onReadReceipt(messageID: String, peerID: String) {}
-    /** Установлена/сброшена сквозная Noise-сессия с пиром (для индикации шифрования). */
+    /** An end-to-end Noise session with a peer was established/torn down (for the encryption indicator). */
     fun onNoiseSession(peerID: String, established: Boolean) {}
     fun onError(error: Throwable)
     fun onLog(message: String) {}
 }
 
 /**
- * Реальный mesh-чат поверх портированного из bitchat BLE-mesh стека.
+ * A real mesh chat on top of the BLE mesh stack ported from bitchat.
  *
- * Транспорт устанавливает настоящие GATT-соединения (server + client), режет
- * крупные пакеты на фрагменты (MTU 512), хранит сообщения для офлайн-пиров
- * (store-and-forward) и ретранслирует пакеты по сети с TTL и дедупликацией.
+ * The transport establishes real GATT connections (server + client), splits
+ * large packets into fragments (MTU 512), stores messages for offline peers
+ * (store-and-forward), and relays packets across the network with TTL and deduplication.
  */
 class MeshChatSdk(
     context: Context,
     private val listener: MeshChatListener,
     nickname: String? = null,
     /**
-     * Держать ли mesh живым в фоне через foreground-сервис с постоянным
-     * уведомлением. По умолчанию включено — иначе Android усыпит процесс и
-     * сеть перестанет работать при свёрнутом приложении.
+     * Whether to keep mesh alive in the background via a foreground service with a
+     * persistent notification. Enabled by default — otherwise Android puts the process
+     * to sleep and the network stops working when the app is minimized.
      */
     private val keepAliveInBackground: Boolean = true,
     /**
-     * Показывать ли локальное уведомление о входящем сообщении, когда приложение
-     * в фоне (в foreground UI и так показывает сообщение в списке).
-     * Можно менять в рантайме через [setNotificationsEnabled].
+     * Whether to show a local notification for an incoming message when the app is
+     * backgrounded (in the foreground the UI already shows the message in the list).
+     * Can be changed at runtime via [setNotificationsEnabled].
      */
     notifyInBackground: Boolean = true,
 ) {
@@ -75,11 +75,11 @@ class MeshChatSdk(
         private const val GOSSIP_OWNER = "MeshChatSdk"
     }
 
-    /** Текущее состояние пуш-уведомлений о входящих (изменяемое). */
+    /** Current state of push notifications for incoming messages (mutable). */
     @Volatile
     private var notifyInBackground: Boolean = notifyInBackground
 
-    /** Включить/выключить локальные уведомления о входящих сообщениях. */
+    /** Enable/disable local notifications for incoming messages. */
     fun setNotificationsEnabled(enabled: Boolean) {
         notifyInBackground = enabled
         Log.i(TAG, "notifyInBackground=$enabled")
@@ -90,16 +90,16 @@ class MeshChatSdk(
     @Volatile
     private var started = false
 
-    /** В фоне или нет — для решения, слать ли локальное уведомление. */
+    /** Whether we're in the background — used to decide whether to post a local notification. */
     @Volatile
     private var appInForeground = true
 
     init {
-        // Включаем персистентность настроек/идентичности (best-effort).
+        // Enable persistence of settings/identity (best-effort).
         try { DebugPreferenceManager.init(appContext) } catch (_: Exception) {}
         nickname?.let { NicknameProvider.setNickname(it) }
 
-        // Следим за foreground/background всего процесса (на главном потоке).
+        // Track the whole process's foreground/background state (on the main thread).
         Handler(Looper.getMainLooper()).post {
             try {
                 appInForeground = ProcessLifecycleOwner.get().lifecycle.currentState
@@ -121,12 +121,12 @@ class MeshChatSdk(
 
     private val meshService = BluetoothMeshService(appContext)
 
-    // Постоянное хранилище доверенных (verified) отпечатков — тот же EncryptedSharedPreferences,
-    // что использует mesh-ядро (читает/пишет ключ verified_fingerprints).
+    // Persistent store of verified fingerprints — the same EncryptedSharedPreferences
+    // the mesh core uses (reads/writes the verified_fingerprints key).
     private val identityStore = SecureIdentityStateManager(appContext)
 
     init {
-        // Сообщаем наверх, когда установлена Noise-сессия с пиром (для иконки 🔒).
+        // Notify upward when a Noise session with a peer is established (for the 🔒 icon).
         meshService.setOnNoiseSessionEstablished { peerID ->
             Log.i(TAG, "🔒 Noise session established with $peerID")
             listener.onNoiseSession(peerID, true)
@@ -136,7 +136,7 @@ class MeshChatSdk(
                 Log.i(TAG, "📥 RX message from=${message.senderPeerID} private=${message.isPrivate} " +
                     "relay=${message.isRelay} content='${message.content.take(60)}'")
                 listener.onMessageReceived(message.toMeshChatMessage())
-                // В фоне JS спит — показываем нативное уведомление о входящем.
+                // In the background JS sleeps — show a native notification for the incoming message.
                 if (notifyInBackground && !appInForeground) {
                     try {
                         MeshNotifier.notifyMessage(
@@ -169,7 +169,7 @@ class MeshChatSdk(
             override fun didReceiveVerifyChallenge(peerID: String, payload: ByteArray, timestampMs: Long) {}
             override fun didReceiveVerifyResponse(peerID: String, payload: ByteArray, timestampMs: Long) {}
 
-            // Каналы с паролем — это фаза 2 (вместе с шифрованием), пока не расшифровываем.
+            // Password-protected channels are phase 2 (together with encryption); we don't decrypt for now.
             override fun decryptChannelMessage(encryptedContent: ByteArray, channel: String): String? = null
 
             override fun getNickname(): String? =
@@ -179,7 +179,7 @@ class MeshChatSdk(
         }
     }
 
-    /** Идентификатор этого узла в mesh-сети (стабильный, привязан к ключу). */
+    /** This node's identifier in the mesh network (stable, tied to the key). */
     val myPeerID: String get() = meshService.myPeerID
 
     fun setNickname(nickname: String?) {
@@ -187,9 +187,9 @@ class MeshChatSdk(
     }
 
     /**
-     * Режим экономии батареи. При включении mesh в фоне работает реже
-     * (POWER_SAVER): меньше расход, но доставка в фоне менее оперативна.
-     * По умолчанию выключен (в фоне держим BALANCED).
+     * Battery saver mode. When enabled, mesh runs less often in the background
+     * (POWER_SAVER): lower drain, but background delivery is less prompt.
+     * Disabled by default (we hold BALANCED in the background).
      */
     fun setBatterySaver(enabled: Boolean) {
         com.bitchat.android.mesh.PowerManager.setBatterySaver(enabled)
@@ -210,9 +210,9 @@ class MeshChatSdk(
             MeshServiceHolder.meshService = meshService
             meshService.startServices()
             MeshServiceHolder.startSharedGossip(GOSSIP_OWNER)
-            // Сразу анонсируем себя, чтобы соседние узлы нас увидели.
+            // Announce ourselves right away so neighboring nodes can see us.
             meshService.sendBroadcastAnnounce()
-            // Foreground-сервис: держим процесс живым в фоне.
+            // Foreground service: keep the process alive in the background.
             if (keepAliveInBackground) {
                 try { MeshForegroundService.start(appContext) } catch (t: Throwable) {
                     Log.w(TAG, "Failed to start foreground service: ${t.message}")
@@ -227,14 +227,14 @@ class MeshChatSdk(
         }
     }
 
-    /** Короткая сводка состояния транспорта — для диагностики. */
+    /** A short summary of the transport state — for diagnostics. */
     private fun transportStatus(): String = try {
         "activePeers=${meshService.getActivePeerCount()} peers=${meshService.getPeerNicknames().keys}"
     } catch (t: Throwable) {
         "status unavailable: ${t.message}"
     }
 
-    /** Полный отладочный статус транспорта (можно дёргать из RN). */
+    /** Full debug status of the transport (can be called from RN). */
     fun debugStatus(): String = try {
         meshService.getDebugStatus()
     } catch (t: Throwable) {
@@ -260,16 +260,16 @@ class MeshChatSdk(
         }
     }
 
-    /** Широковещательное сообщение всем узлам сети. */
+    /** Broadcast message to all nodes on the network. */
     fun sendBroadcastMessage(text: String) {
         Log.i(TAG, "📤 sendBroadcast len=${text.length} started=$started ${transportStatus()}")
         if (!ensureStarted()) return
         try {
             meshService.sendMessage(text)
             Log.i(TAG, "📤 sendBroadcast -> meshService.sendMessage() returned ok")
-            // Локальное эхо: транспорт только передаёт пакет в сеть и не возвращает
-            // собственное сообщение через didReceiveMessage, поэтому показываем его
-            // отправителю сами — иначе кажется, что «сообщение не отправилось».
+            // Local echo: the transport only pushes the packet into the network and doesn't
+            // return our own message via didReceiveMessage, so we show it to the sender
+            // ourselves — otherwise it looks like "the message wasn't sent".
             echoOwnMessage(text, isPrivate = false, recipientNickname = null)
         } catch (t: Throwable) {
             Log.e(TAG, "❌ Failed to send broadcast message", t)
@@ -277,7 +277,7 @@ class MeshChatSdk(
         }
     }
 
-    /** Приватное сообщение конкретному узлу по его peerID. */
+    /** Private message to a specific node by its peerID. */
     fun sendPrivateMessage(text: String, recipientPeerID: String, recipientNickname: String) {
         Log.i(TAG, "📤 sendPrivate to=$recipientPeerID len=${text.length} started=$started ${transportStatus()}")
         if (!ensureStarted()) return
@@ -291,13 +291,13 @@ class MeshChatSdk(
         }
     }
 
-    // --- Сквозное шифрование (Noise) и верификация пиров ---
+    // --- End-to-end encryption (Noise) and peer verification ---
 
     /**
-     * Инициировать Noise-handshake с пиром. Нужно вызвать перед первой отправкой
-     * приватного сообщения: `sendPrivateMessage` работает по принципу fire-and-forget
-     * и, если сессии ещё нет, сообщение НЕ отправится (только запустится handshake).
-     * Об установлении сессии придёт onNoiseSession(peerID, true).
+     * Initiate a Noise handshake with a peer. Must be called before sending the first
+     * private message: `sendPrivateMessage` is fire-and-forget and, if there's no session
+     * yet, the message will NOT be sent (only the handshake is kicked off).
+     * Session establishment is reported via onNoiseSession(peerID, true).
      */
     fun startHandshake(peerID: String) {
         if (!ensureStarted()) return
@@ -305,22 +305,22 @@ class MeshChatSdk(
         meshService.initiateNoiseHandshake(peerID)
     }
 
-    /** Есть ли установленная (зашифрованная) Noise-сессия с пиром. */
+    /** Whether an established (encrypted) Noise session exists with the peer. */
     fun hasSession(peerID: String): Boolean = try {
         meshService.hasEstablishedSession(peerID)
     } catch (_: Exception) { false }
 
-    /** Отпечаток ключа пира (SHA-256 статического Noise-ключа) — для сверки вне сети. */
+    /** Peer's key fingerprint (SHA-256 of the static Noise key) — for out-of-band comparison. */
     fun getPeerFingerprint(peerID: String): String? = try {
         meshService.getPeerFingerprint(peerID)
     } catch (_: Exception) { null }
 
-    /** Наш собственный отпечаток ключа (его сверяет собеседник). */
+    /** Our own key fingerprint (the other party compares it). */
     fun getMyFingerprint(): String? = try {
         meshService.getIdentityFingerprint()
     } catch (_: Exception) { null }
 
-    /** Помечен ли пир как доверенный (verified) — по отпечатку, хранится локально. */
+    /** Whether the peer is marked verified — by fingerprint, stored locally. */
     fun isPeerVerified(peerID: String): Boolean {
         return try {
             val fp = meshService.getPeerFingerprint(peerID) ?: return false
@@ -330,12 +330,12 @@ class MeshChatSdk(
         }
     }
 
-    /** Пометить/снять пир как доверенный (после сверки отпечатков вне сети). */
+    /** Mark/unmark a peer as verified (after comparing fingerprints out of band). */
     fun setPeerVerified(peerID: String, verified: Boolean) {
         try {
             val fp = meshService.getPeerFingerprint(peerID)
             if (fp == null) {
-                Log.w(TAG, "setPeerVerified: нет отпечатка для $peerID (сессия не установлена?)")
+                Log.w(TAG, "setPeerVerified: no fingerprint for $peerID (session not established?)")
                 return
             }
             identityStore.setVerifiedFingerprint(fp, verified)
@@ -345,7 +345,7 @@ class MeshChatSdk(
         }
     }
 
-    /** Никнейм пира по его peerID (или null, если неизвестен). */
+    /** Peer's nickname by its peerID (or null if unknown). */
     fun getPeerNickname(peerID: String): String? = getPeerNicknames()[peerID]
 
     private fun echoOwnMessage(text: String, isPrivate: Boolean, recipientNickname: String?) {

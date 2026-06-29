@@ -42,7 +42,7 @@ final class FavoritesPersistenceService: ObservableObject {
         // PreviewKeychainManager lives in _PreviewHelpers, a development
         // asset excluded from archive builds — release code must not
         // reference it. Tests always run Debug, so the guard is lossless.
-        // MeshChat: тест/preview-инъекция keychain убрана (dev-only хелперы не вендорим).
+        // MeshChat: the test/preview keychain injection was removed (we don't vendor dev-only helpers).
         return KeychainManager()
     }
 

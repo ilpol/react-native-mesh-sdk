@@ -15,14 +15,14 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 
 /**
- * Foreground-сервис, удерживающий процесс приложения живым, пока активен mesh.
+ * Foreground service that keeps the app process alive while mesh is active.
  *
- * Сам BLE-mesh (BluetoothMeshService) работает в процессе приложения и
- * управляется из [MeshChatSdk]; задача сервиса — не дать Android усыпить/убить
- * процесс при свёрнутом приложении или погашенном экране, чтобы транспорт
- * продолжал сканировать, держать GATT-соединения и ретранслировать пакеты.
+ * The BLE mesh itself (BluetoothMeshService) runs in the app process and is
+ * managed from [MeshChatSdk]; the service's job is to stop Android from sleeping/killing
+ * the process when the app is minimized or the screen is off, so the transport
+ * keeps scanning, holding GATT connections, and relaying packets.
  *
- * Тип сервиса — connectedDevice (работа с BLE-устройствами поблизости).
+ * The service type is connectedDevice (working with nearby BLE devices).
  */
 class MeshForegroundService : Service() {
 
@@ -33,9 +33,9 @@ class MeshForegroundService : Service() {
         const val ACTION_START = "com.example.meshchat.sdk.START"
         const val ACTION_STOP = "com.example.meshchat.sdk.STOP"
 
-        /** Заголовок/текст уведомления — можно переопределить до запуска. */
-        @Volatile var notificationTitle: String = "MeshChat активен"
-        @Volatile var notificationText: String = "Обмен сообщениями по Bluetooth-сети"
+        /** Notification title/text — can be overridden before start. */
+        @Volatile var notificationTitle: String = "MeshChat active"
+        @Volatile var notificationText: String = "Messaging over the Bluetooth network"
 
         fun start(context: Context) {
             val intent = Intent(context, MeshForegroundService::class.java).apply { action = ACTION_START }
@@ -62,39 +62,39 @@ class MeshForegroundService : Service() {
                 return START_NOT_STICKY
             }
             else -> {
-                // ВАЖНО: если startForeground упадёт (особенности OEM/версии Android,
-                // не выданное уведомление, ограничения FGS), нельзя ронять процесс —
-                // иначе вместе с ним умрёт mesh и сообщения перестанут приходить.
+                // IMPORTANT: if startForeground fails (OEM/Android-version quirks,
+                // an ungranted notification, FGS restrictions), we must not crash the process —
+                // otherwise mesh dies with it and messages stop arriving.
                 try {
                     startForegroundCompat(buildNotification())
                 } catch (t: Throwable) {
-                    Log.e(TAG, "startForeground failed; продолжаем без foreground: ${t.message}", t)
-                    // Снимаем «обещание» промоушена, чтобы не получить ANR/таймаут-краш.
+                    Log.e(TAG, "startForeground failed; continuing without foreground: ${t.message}", t)
+                    // Drop the promotion "promise" to avoid an ANR/timeout crash.
                     try { stopForegroundCompat() } catch (_: Throwable) {}
                     try { stopSelf() } catch (_: Throwable) {}
                     return START_NOT_STICKY
                 }
             }
         }
-        // START_STICKY: если систему всё же убьёт процесс, она попробует пересоздать сервис.
+        // START_STICKY: if the system kills the process anyway, it will try to recreate the service.
         return START_STICKY
     }
 
     /**
-     * Приложение смахнули из «недавних». Foreground-сервис по умолчанию НЕ
-     * привязан к задаче, поэтому процесс (и mesh в нём) продолжает жить — мы
-     * лишь переутверждаем уведомление и НЕ останавливаемся. На агрессивных
-     * прошивках ОС всё равно может убить процесс; против этого помогает
-     * исключение приложения из оптимизации батареи (см. SDK API).
+     * The app was swiped away from "recents". A foreground service is NOT bound
+     * to the task by default, so the process (and mesh in it) keeps living — we
+     * just re-assert the notification and do NOT stop. On aggressive firmware the
+     * OS may still kill the process; exempting the app from battery optimization
+     * helps against that (see the SDK API).
      */
     override fun onTaskRemoved(rootIntent: Intent?) {
-        Log.i(TAG, "onTaskRemoved: задачу смахнули, держим сервис и mesh живыми")
+        Log.i(TAG, "onTaskRemoved: task swiped away, keeping the service and mesh alive")
         try {
             startForegroundCompat(buildNotification())
         } catch (t: Throwable) {
             Log.w(TAG, "re-assert foreground after task removed failed: ${t.message}")
         }
-        // НЕ вызываем super-поведение, которое могло бы остановить сервис.
+        // Do NOT call the super behavior, which could stop the service.
     }
 
     override fun onDestroy() {
@@ -134,7 +134,7 @@ class MeshForegroundService : Service() {
                     "MeshChat",
                     NotificationManager.IMPORTANCE_LOW
                 ).apply {
-                    description = "Удерживает mesh-сеть активной в фоне"
+                    description = "Keeps the mesh network active in the background"
                     setShowBadge(false)
                 }
                 nm.createNotificationChannel(channel)
