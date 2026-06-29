@@ -108,10 +108,16 @@ enum BLEFanoutSelector {
     }
 
     private static func shouldSubset(packetType: UInt8, directedPeerHint: PeerID?) -> Bool {
+        // Public chat messages (type .message) are NOT gossip-subsetted: Android
+        // floods them to every connected link, so iOS must too. Otherwise a
+        // multi-link iOS node can deterministically exclude the only link that
+        // reaches an Android peer, and gossip-sync fails to backfill it — which
+        // showed up as Android→iOS public working but iOS→Android being dropped.
         directedPeerHint == nil
             && packetType != MessageType.fragment.rawValue
             && packetType != MessageType.announce.rawValue
             && packetType != MessageType.requestSync.rawValue
+            && packetType != MessageType.message.rawValue
     }
 
     private static func subsetSize(for count: Int) -> Int {

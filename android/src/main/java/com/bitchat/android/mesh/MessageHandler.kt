@@ -388,13 +388,25 @@ class MessageHandler(private val myPeerID: String, private val appContext: andro
         val packet = routed.packet
         val peerID = routed.peerID ?: "unknown"
         
-        // Enforce: only accept public messages from verified peers we know
+        // Accept public messages by verifying the packet signature against the
+        // peer's announced signing key over the canonical packet bytes — the same
+        // range iOS signs with and Android already verifies announces with. We do
+        // NOT gate on `isVerifiedNickname`: iOS gates public messages on a valid
+        // signature, not on that flag, so requiring it dropped every iOS-originated
+        // public message on Android.
         val peerInfo = delegate?.getPeerInfo(peerID)
-        if (peerInfo == null || !peerInfo.isVerifiedNickname) {
-            Log.w(TAG, "🚫 Dropping public message from unverified or unknown peer ${peerID.take(8)}...")
+        val signingKey = peerInfo?.signingPublicKey
+        if (peerInfo == null || signingKey == null) {
+            Log.w(TAG, "🚫 Dropping public message from unknown peer ${peerID.take(8)}... (no announce/signing key yet)")
             return
         }
-        
+        val signature = packet.signature
+        if (signature == null ||
+            delegate?.verifyEd25519Signature(signature, packet.toBinaryDataForSigning() ?: ByteArray(0), signingKey) != true) {
+            Log.w(TAG, "🚫 Dropping public message with missing/invalid signature from ${peerID.take(8)}...")
+            return
+        }
+
         try {
             // Try file packet first (voice, image, etc.) and log outcome for FILE_TRANSFER
             val isFileTransfer = com.bitchat.android.protocol.MessageType.fromValue(packet.type) == com.bitchat.android.protocol.MessageType.FILE_TRANSFER
